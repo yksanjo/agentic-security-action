@@ -1,0 +1,106 @@
+name: 'Agentic Workflow Security Scanner'
+description: 'Scan GitHub Actions workflows for security vulnerabilities'
+author: 'yksanjo'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  path:
+    description: 'Path to scan'
+    required: false
+    default: '.github/workflows'
+  severity:
+    description: 'Minimum severity level (CRITICAL, HIGH, MEDIUM, LOW)'
+    required: false
+    default: 'HIGH'
+  format:
+    description: 'Output format (text, json)'
+    required: false
+    default: 'text'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Run Security Scanner
+      id: scan
+      shell: python
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_SEVERITY: ${{ inputs.severity }}
+        INPUT_FORMAT: ${{ inputs.format }}
+      run: |
+        import os
+        import json
+        from pathlib import Path
+
+        class Finding:
+            def __init__(self, rule_id, severity, title, file_path):
+                self.rule_id = rule_id
+                self.severity = severity
+                self.title = title
+                self.file_path = file_path
+
+        def check_permissions(content, file_path):
+            findings = []
+            if 'permissions:' in content and 'contents: write' in content:
+                findings.append(Finding("PERM001", "HIGH", "Overly Permissive Token", file_path))
+            if 'pull_request_target' in content:
+                findings.append(Finding("PERM004", "CRITICAL", "pull_request_target Usage", file_path))
+            return findings
+
+        def check_unsafe_commands(content, file_path):
+            findings = []
+            dangerous = ['rm -rf /', 'eval $', 'curl | sh', 'wget | sh', '--privileged']
+            for cmd in dangerous:
+                if cmd in content:
+                    findings.append(Finding("EXEC001", "CRITICAL", f"Dangerous: {cmd}", file_path))
+            return findings
+
+        def check_secrets(content, file_path):
+            findings = []
+            patterns = ['ghp_', 'AKIA', 'sk-', 'xoxb-']
+            for p in patterns:
+                if p in content and '${{ secrets.' not in content:
+                    findings.append(Finding("SECR001", "CRITICAL", f"Secret: {p}", file_path))
+            return findings
+
+        def scan_file(file_path):
+            findings = []
+            try:
+                with open(file_path, 'r') as f:
+                    content = f.read()
+            except:
+                return findings
+            findings.extend(check_permissions(content, file_path))
+            findings.extend(check_unsafe_commands(content, file_path))
+            findings.extend(check_secrets(content, file_path))
+            return findings
+
+        path = os.environ.get('INPUT_PATH', '.github/workflows')
+        severity = os.environ.get('INPUT_SEVERITY', 'HIGH')
+        fmt = os.environ.get('INPUT_FORMAT', 'text')
+
+        files = list(Path(path).rglob('*.yml')) + list(Path(path).rglob('*.yaml'))
+        all_findings = []
+        for f in files:
+            all_findings.extend(scan_file(str(f)))
+
+        if fmt == 'json':
+            print(json.dumps({'findings': [{'rule': f.rule_id, 'severity': f.severity, 'title': f.title, 'file': f.file_path} for f in all_findings]}))
+        else:
+            print(f"\n🔍 Security Scan Results")
+            print(f"Files scanned: {len(files)}")
+            print(f"Findings: {len(all_findings)}\n")
+            for f in all_findings:
+                print(f"[{f.severity}] {f.title} - {f.file_path}")
+
+        print(f"::set-output name=findings::{len(all_findings)}")

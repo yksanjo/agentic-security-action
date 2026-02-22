@@ -1,51 +1,82 @@
-# Agentic Security Action
+# agentic-security-action
 
-A GitHub Action for scanning GitHub Actions workflows for security vulnerabilities.
+## Detailed Description
+
+agentic-security-action is maintained as an industry-grade software project with production-ready engineering practices.  
+This repository includes documented setup, quality gates, operational guidance, and governance standards so contributors can safely build, test, and ship changes with confidence.
+
+## Problem Statement
+
+Describe the user or business problem this project solves, the target users, and expected outcomes.
+
+## Solution Overview
+
+Summarize the architecture, core modules, and runtime behavior at a high level.
+
+## Key Features
+
+- Clear project scope and intended use.
+- Reproducible local development workflow.
+- Test coverage and CI quality gates.
+- Security and contribution policies.
+- Deployment-ready repository structure.
+
+## Repository Structure
+
+```text
+.
+|-- src/                  # Core implementation
+|-- tests/                # Automated test suites
+|-- docs/                 # Design notes and operational docs
+|-- .github/workflows/    # CI pipelines
+|-- README.md
+|-- LICENSE
+|-- CONTRIBUTING.md
+|-- SECURITY.md
+|-- CODE_OF_CONDUCT.md
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Git
+- Project runtime/toolchain for this repo
+
+### Local Setup
+
+```bash
+make test
+make lint
+```
 
 ## Usage
 
-```yaml
-name: Security Scan
-on: [push, pull_request]
+Document primary commands, API routes, CLI examples, or UI workflows here.
 
-jobs:
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: yksanjo/agentic-security-action@v1
-        with:
-          path: '.github/workflows'
-          severity: 'HIGH'
-```
+## Quality Standards
 
-## Inputs
+- CI must pass before merge.
+- Changes require tests for critical behavior.
+- Security-sensitive changes should include risk notes.
+- Keep pull requests focused and reviewable.
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| path | Path to scan | `.github/workflows` |
-| severity | Minimum severity level | `HIGH` |
-| format | Output format (text, json) | `text` |
+## Security
 
-## Example with Fail on Critical
+See `SECURITY.md` for responsible disclosure and handling guidelines.
 
-```yaml
-name: Security Scan
-on: [push, pull_request]
+## Contributing
 
-jobs:
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: yksanjo/agentic-security-action@v1
-        with:
-          path: '.github/workflows'
-          severity: 'HIGH'
-          format: 'json'
-```
+See `CONTRIBUTING.md` for branching, commit, and pull request expectations.
 
-## Detects
+## Roadmap
 
-- Overly permissive GitHub token permissions
-- pull_request_target usage
-- Dangerous shell commands (rm -rf, eval, curl | sh)
-- Hardcoded secrets (GitHub PAT, AWS keys, API keys)
+Track upcoming milestones, technical debt, and planned feature work.
+
+## Support
+
+Open a GitHub issue for bugs, feature requests, or documentation gaps.
+
+## License
+
+This project is released under the MIT License.
